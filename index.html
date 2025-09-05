@@ -2,115 +2,31 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>ThingSpeak 資料顯示</title>
-  <style>
-    body {
-      font-family: "Microsoft JhengHei", Arial, sans-serif;
-      background: #f9f9f9;
-      margin: 20px;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-      color: #0066cc;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    th, td {
-      padding: 10px;
-      text-align: center;
-      border-bottom: 1px solid #ddd;
-    }
-    th {
-      background: #0066cc;
-      color: #fff;
-      position: sticky;
-      top: 0;
-    }
-    tr:nth-child(even) {
-      background: #f2f2f2;
-    }
-  </style>
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <title>今日 ThingSpeak 資料圖表</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>今日 ThingSpeak 圖表</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f0f8ff;
-      padding: 30px;
       text-align: center;
+      padding: 30px;
     }
     h2 {
       color: #333;
     }
-    canvas {
-      max-width: 800px;
-      margin: auto;
+    iframe {
+      border: 2px solid #87cefa;
+      border-radius: 10px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
     }
   </style>
 </head>
 <body>
   <h2>今日資料圖表</h2>
-  <canvas id="myChart"></canvas>
 
-  <script>
-    const channelURL = "https://thingspeak.mathworks.com/channels/3062393/feeds.json?results=1000"; // 取得最近1000筆
+  <iframe width="800" height="400"
+    src="https://thingspeak.com/channels/3062393/charts/1?bgcolor=%23ffffff&color=%231e90ff&dynamic=true&type=line&results=1440">
+  </iframe>
 
-    fetch(channelURL)
-      .then(response => response.json())
-      .then(data => {
-        const feeds = data.feeds;
-
-        // 取得今天日期字串 YYYY-MM-DD
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`;
-
-        // 過濾出今天的資料
-        const todayFeeds = feeds.filter(f => f.created_at.startsWith(todayStr));
-
-        const labels = todayFeeds.map(f => f.created_at.substring(11, 19)); // 取時間 HH:MM:SS
-        const values = todayFeeds.map(f => parseFloat(f.field1)); // 取 Field1
-
-        const ctx = document.getElementById('myChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: '今日數據 (Field1)',
-              data: values,
-              borderColor: 'rgba(75, 192, 192, 1)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              tension: 0.3,
-              fill: true,
-              pointRadius: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { display: true },
-            },
-            scales: {
-              x: { title: { display: true, text: '時間' } },
-              y: { title: { display: true, text: '數值' }, beginAtZero: true }
-            }
-          }
-        });
-      })
-      .catch(err => console.error("取得資料錯誤:", err));
-  </script>
+  <p style="color:#555; margin-top:10px;">圖表顯示最近 1440 筆資料（約一天的資料，每分鐘一筆）</p>
 </body>
 </html>
