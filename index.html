@@ -74,4 +74,18 @@
         // 顯示文字列表
         noticeDiv.innerHTML = todayFeeds.map(feed => {
           const name = feed[`field${fieldNum}`] || "沒有資料";
-          const time = feed.created_at.subs_
+          const time = feed.created_at.substring(11,19); // HH:MM:SS
+          return `<div class="student">學生到校：${name} (${time})</div>`;
+        }).join("");
+
+      } catch (err) {
+        noticeDiv.textContent = "讀取失敗";
+        console.error(err);
+      }
+    }
+
+    fetchTodayData();            // 初次抓資料
+    setInterval(fetchTodayData, 60000); // 每分鐘更新一次
+  </script>
+</body>
+</html>
