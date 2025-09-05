@@ -1,60 +1,56 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8">
-<title>今日到校通知</title>
-<style>
-  body { font-family: Arial, sans-serif; background:#f0f8ff; padding:30px; }
-  h2 { color:#333; text-align:center; }
-  #notice { 
-    margin-top:20px; 
-    padding:10px; 
-    background:#ffffff; 
-    border:2px solid #87cefa; 
-    border-radius:10px; 
-    max-width:600px; 
-    margin-left:auto; margin-right:auto;
-  }
-  .student {
-    padding:5px; 
-    border-bottom:1px solid #eee;
-    font-size:1.2em;
-  }
-</style>
-</head>
-<body>
-<h2>今日到校通知</h2>
-<div id="notice">載入中…</div>
+const channelID = "3062393";
+const apiKey = "E514Y3YSM2ZC9J36";
+const fieldNum = 1;
+const resultsNum = 100;
+const marqueeSpan = document.getElementById("marqueeText");
+const marqueeWidth = document.querySelector('.marquee').offsetWidth;
+let posX = marqueeWidth;
 
-<script>
-const channelURL = "https://thingspeak.mathworks.com/channels/3062393/feeds.json?results=1000";
+function isToday(dateStr) {
+  const date = new Date(dateStr);
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear() &&
+         date.getMonth() === today.getMonth() &&
+         date.getDate() === today.getDate();
+}
 
-fetch(channelURL)
-  .then(response => response.json())
-  .then(data => {
+async function fetchData() {
+  try {
+    const url = `https://api.thingspeak.com/channels/${channelID}/fields/${fieldNum}.json?api_key=${apiKey}&results=${resultsNum}`;
+    const response = await fetch(url);
+    const data = await response.json();
     const feeds = data.feeds;
 
-    // 取得今天日期字串 YYYY-MM-DD
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
-
-    // 過濾出今天的資料（假設 field1 是學生姓名或編號）
-    const todayFeeds = feeds.filter(f => f.created_at.startsWith(todayStr));
-
-    const noticeDiv = document.getElementById('notice');
-    if(todayFeeds.length === 0){
-      noticeDiv.innerHTML = "<p>今天還沒學生到校</p>";
-    } else {
-      noticeDiv.innerHTML = todayFeeds.map(f => `<div class="student">學生到校：${f.field1} (${f.created_at.substring(11,19)})</div>`).join('');
+    if (!feeds || feeds.length === 0) {
+      marqueeSpan.textContent = "目前沒有資料";
+      return;
     }
-  })
-  .catch(err => {
-    document.getElementById('notice').innerHTML = "取得資料錯誤";
-    console.error(err);
-  });
-</script>
-</body>
-</html>
+
+    const todayFeeds = feeds.filter(feed => feed.created_at && isToday(feed.created_at));
+    if (todayFeeds.length === 0) {
+      marqueeSpan.textContent = "今天沒有資料";
+      return;
+    }
+
+    const lastFeeds = todayFeeds.slice(-6);
+    const messages = lastFeeds.map(feed => feed[`field${fieldNum}`] || "沒有資料");
+    marqueeSpan.textContent = messages.join(" ｜ ");
+    posX = marqueeWidth;
+  } catch (error) {
+    marqueeSpan.textContent = "讀取失敗";
+    console.error(error);
+  }
+}
+
+function animateMarquee() {
+  posX -= 2;
+  if (posX < -marqueeSpan.offsetWidth) {
+    posX = marqueeWidth;
+  }
+  marqueeSpan.style.transform = `translateX(${posX}px)`;
+  requestAnimationFrame(animateMarquee);
+}
+
+fetchData();
+setInterval(fetchData, 60000);
+animateMarquee();
