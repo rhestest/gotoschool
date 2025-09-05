@@ -1,56 +1,77 @@
-const channelID = "3062393";
-const apiKey = "E514Y3YSM2ZC9J36";
-const fieldNum = 1;
-const resultsNum = 100;
-const marqueeSpan = document.getElementById("marqueeText");
-const marqueeWidth = document.querySelector('.marquee').offsetWidth;
-let posX = marqueeWidth;
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>今日到校學生通知</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background: #f9f5ec;
+      padding: 30px;
+      text-align: center;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    #notice {
+      display: inline-block;
+      background: #fff8dc;
+      border: 5px solid #d35400;
+      border-radius: 15px;
+      padding: 20px;
+      max-width: 600px;
+      text-align: left;
+      font-size: 20px;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+    }
+    .student {
+      margin-bottom: 8px;
+      color: #1a5276;
+    }
+  </style>
+</head>
+<body>
+  <h1>📢 今日到校學生通知</h1>
+  <div id="notice">載入中...</div>
 
-function isToday(dateStr) {
-  const date = new Date(dateStr);
-  const today = new Date();
-  return date.getFullYear() === today.getFullYear() &&
-         date.getMonth() === today.getMonth() &&
-         date.getDate() === today.getDate();
-}
+  <script>
+    const channelID = "3062393";   // 你的 ThingSpeak Channel ID
+    const apiKey = "E514Y3YSM2ZC9J36"; // 你的 Read API Key
+    const fieldNum = 1;             // 要抓的欄位
+    const resultsNum = 100;         // 取得最近 100 筆
 
-async function fetchData() {
-  try {
-    const url = `https://api.thingspeak.com/channels/${channelID}/fields/${fieldNum}.json?api_key=${apiKey}&results=${resultsNum}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    const feeds = data.feeds;
+    const noticeDiv = document.getElementById("notice");
 
-    if (!feeds || feeds.length === 0) {
-      marqueeSpan.textContent = "目前沒有資料";
-      return;
+    function isToday(dateStr) {
+      const date = new Date(dateStr);
+      const today = new Date();
+      return date.getFullYear() === today.getFullYear() &&
+             date.getMonth() === today.getMonth() &&
+             date.getDate() === today.getDate();
     }
 
-    const todayFeeds = feeds.filter(feed => feed.created_at && isToday(feed.created_at));
-    if (todayFeeds.length === 0) {
-      marqueeSpan.textContent = "今天沒有資料";
-      return;
-    }
+    async function fetchTodayData() {
+      try {
+        const url = `https://api.thingspeak.com/channels/${channelID}/fields/${fieldNum}.json?api_key=${apiKey}&results=${resultsNum}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        const feeds = data.feeds;
 
-    const lastFeeds = todayFeeds.slice(-6);
-    const messages = lastFeeds.map(feed => feed[`field${fieldNum}`] || "沒有資料");
-    marqueeSpan.textContent = messages.join(" ｜ ");
-    posX = marqueeWidth;
-  } catch (error) {
-    marqueeSpan.textContent = "讀取失敗";
-    console.error(error);
-  }
-}
+        if (!feeds || feeds.length === 0) {
+          noticeDiv.textContent = "目前沒有資料";
+          return;
+        }
 
-function animateMarquee() {
-  posX -= 2;
-  if (posX < -marqueeSpan.offsetWidth) {
-    posX = marqueeWidth;
-  }
-  marqueeSpan.style.transform = `translateX(${posX}px)`;
-  requestAnimationFrame(animateMarquee);
-}
+        // 過濾今天的資料
+        const todayFeeds = feeds.filter(feed => feed.created_at && isToday(feed.created_at));
 
-fetchData();
-setInterval(fetchData, 60000);
-animateMarquee();
+        if (todayFeeds.length === 0) {
+          noticeDiv.textContent = "今天沒有學生到校";
+          return;
+        }
+
+        // 顯示文字列表
+        noticeDiv.innerHTML = todayFeeds.map(feed => {
+          const name = feed[`field${fieldNum}`] || "沒有資料";
+          const time = feed.created_at.subs_
