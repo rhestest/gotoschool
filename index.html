@@ -33,6 +33,7 @@
       font-size: 18px;
       line-height: 1.8;
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      min-width: 400px;
     }
     .time {
       color: #1a5276;
@@ -49,11 +50,19 @@
   <script>
     const channelID = "3062393";  
     const readAPIKey = "E514Y3YSM2ZC9J36";    
-    const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=10`;
+    const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=20`;
 
     function formatTime(isoString) {
       const date = new Date(isoString);
       return date.toLocaleTimeString("zh-TW", { hour12: false });
+    }
+
+    function isToday(isoString) {
+      const date = new Date(isoString);
+      const today = new Date();
+      return date.getFullYear() === today.getFullYear() &&
+             date.getMonth() === today.getMonth() &&
+             date.getDate() === today.getDate();
     }
 
     fetch(url)
@@ -65,11 +74,18 @@
       })
       .then(data => {
         if (data.feeds && data.feeds.length > 0) {
-          let output = "";
-          data.feeds.forEach(feed => {
-            output += `學生到校：${feed.field1 ?? ""} (<span class="time">${formatTime(feed.created_at)}</span>)<br>`;
-          });
-          document.getElementById("data").innerHTML = output;
+          // 過濾只留今天的紀錄
+          const todayFeeds = data.feeds.filter(feed => isToday(feed.created_at));
+
+          if (todayFeeds.length > 0) {
+            let output = "";
+            todayFeeds.forEach(feed => {
+              output += `學生到校：${feed.field1 ?? ""} (<span class="time">${formatTime(feed.created_at)}</span>)<br>`;
+            });
+            document.getElementById("data").innerHTML = output;
+          } else {
+            document.getElementById("data").innerText = "目前無資料";
+          }
         } else {
           document.getElementById("data").innerText = "目前無資料";
         }
