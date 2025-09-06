@@ -25,17 +25,22 @@
   <div id="data">載入中...</div>
 
   <script>
-    const channelID = "3062393";  // ← 改成你的 Channel ID
-    const readAPIKey = "E514Y3YSM2ZC9J36";    // ← 如果需要金鑰才填
+    const channelID = "3062393";  
+    const readAPIKey = "E514Y3YSM2ZC9J36";    
     const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=10`;
 
     fetch(url)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("網路回應異常");
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.feeds && data.feeds.length > 0) {
           let output = "";
           data.feeds.forEach(feed => {
-            output += `${feed.created_at}：${feed.field1}<br>`;
+            output += `${feed.created_at}：${feed.field1 ?? ""}<br>`;
           });
           document.getElementById("data").innerHTML = output;
         } else {
