@@ -1,119 +1,51 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<title>今日到校學生通知跑馬燈</title>
-<style>
-  body {
-    font-family: "Microsoft JhengHei", sans-serif;
-    background: #f9f5ec;
-    text-align: center;
-    padding: 40px;
-  }
-  h1 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-  }
-  .marquee-container {
-    overflow: hidden;
-    white-space: nowrap;
-    border: 3px solid #ff0000;
-    border-radius: 15px;
-    background: #ffffff;
-    padding: 15px;
-    font-size: 22px;
-    font-weight: bold;
-    color: #1a5276;
-    position: relative;
-    width: 80%;
-    margin: 0 auto;
-    height: 40px;
-  }
-  .marquee-text {
-    display: inline-block;
-    position: absolute;
-    white-space: nowrap;
-    will-change: transform;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>ThingSpeak 資料顯示</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f8f9fa;
+    }
+    h2 {
+      color: #333;
+    }
+    #data {
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
 <body>
-<h1>📢 今日到校學生通知</h1>
-<div class="marquee-container">
-  <span id="marqueeText" class="marquee-text">載入中...</span>
-</div>
+  <h2>到校學生資料</h2>
+  <div id="data">載入中...</div>
 
-<script>
-const channelID = "3062393";    // ThingSpeak Channel ID
-const apiKey = "E514Y3YSM2ZC9J36"; // Read API Key
-const fieldNum = 1;              // 欄位號碼
-const resultsNum = 100;          // 取得最近 100 筆
-const proxy = "https://cors-anywhere.herokuapp.com/"; // 避免 CORS
+  <script>
+    const channelID = "3062393";  // ← 改成你的 Channel ID
+    const readAPIKey = "E514Y3YSM2ZC9J36";    // ← 如果需要金鑰才填
+    const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=10`;
 
-const marqueeSpan = document.getElementById("marqueeText");
-const marqueeWidth = document.querySelector('.marquee-container').offsetWidth;
-let posX = marqueeWidth;
-
-function isToday(dateStr) {
-  const date = new Date(dateStr);
-  const today = new Date();
-  return date.getFullYear() === today.getFullYear() &&
-         date.getMonth() === today.getMonth() &&
-         date.getDate() === today.getDate();
-}
-
-async function fetchTodayData() {
-  try {
-    const url = `${proxy}https://api.thingspeak.com/channels/${channelID}/fields/${fieldNum}.json?api_key=${apiKey}&results=${resultsNum}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    const feeds = data.feeds;
-
-    if (!feeds || feeds.length === 0) {
-      marqueeSpan.textContent = "目前沒有資料";
-      posX = marqueeWidth;
-      return;
-    }
-
-    const todayFeeds = feeds.filter(feed => feed.created_at && isToday(feed.created_at));
-
-    if (todayFeeds.length === 0) {
-      marqueeSpan.textContent = "今天沒有學生到校";
-      posX = marqueeWidth;
-      return;
-    }
-
-    const messages = todayFeeds.map(f => {
-      const name = f[`field${fieldNum}`] || "沒有資料";
-      const time = f.created_at.substring(11,19);
-      return `${name} (${time})`;
-    });
-
-    marqueeSpan.textContent = messages.join(" ｜ ");
-    posX = marqueeWidth;
-
-  } catch (err) {
-    marqueeSpan.textContent = "讀取失敗";
-    posX = marqueeWidth;
-    console.error(err);
-  }
-}
-
-function animateMarquee() {
-  posX -= 2; // 速度
-  if (posX < -marqueeSpan.offsetWidth) {
-    posX = marqueeWidth;
-  }
-  marqueeSpan.style.transform = `translateX(${posX}px)`;
-  requestAnimationFrame(animateMarquee);
-}
-
-// 初次抓資料
-fetchTodayData();
-// 每分鐘自動更新
-setInterval(fetchTodayData, 60000);
-// 啟動跑馬燈動畫
-animateMarquee();
-</script>
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        if (data.feeds && data.feeds.length > 0) {
+          let output = "";
+          data.feeds.forEach(feed => {
+            output += `${feed.created_at}：${feed.field1}<br>`;
+          });
+          document.getElementById("data").innerHTML = output;
+        } else {
+          document.getElementById("data").innerText = "目前無資料";
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        document.getElementById("data").innerText = "讀取失敗";
+      });
+  </script>
 </body>
 </html>
