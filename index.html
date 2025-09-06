@@ -2,32 +2,59 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>ThingSpeak 資料顯示</title>
+  <title>今日到校學生通知</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f8f9fa;
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f9f6ef;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
     }
     h2 {
-      color: #333;
+      color: #2c3e50;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    h2::before {
+      content: "📢 ";
     }
     #data {
-      padding: 10px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      background: #fff8dc;
+      border: 3px solid #d2691e;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+      font-size: 18px;
+      line-height: 1.8;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .time {
+      color: #1a5276;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h2>到校學生資料</h2>
-  <div id="data">載入中...</div>
+  <div class="container">
+    <h2>今日到校學生通知</h2>
+    <div id="data">載入中...</div>
+  </div>
 
   <script>
     const channelID = "3062393";  
     const readAPIKey = "E514Y3YSM2ZC9J36";    
     const url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=10`;
+
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString("zh-TW", { hour12: false });
+    }
 
     fetch(url)
       .then(response => {
@@ -40,7 +67,7 @@
         if (data.feeds && data.feeds.length > 0) {
           let output = "";
           data.feeds.forEach(feed => {
-            output += `${feed.created_at}：${feed.field1 ?? ""}<br>`;
+            output += `學生到校：${feed.field1 ?? ""} (<span class="time">${formatTime(feed.created_at)}</span>)<br>`;
           });
           document.getElementById("data").innerHTML = output;
         } else {
